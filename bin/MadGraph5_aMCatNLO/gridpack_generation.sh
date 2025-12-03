@@ -136,9 +136,9 @@ make_gridpack () {
     MGBASEDIR=mgbasedir
     
     MG_EXT=".tar.gz"
-    MG=MG5_aMC_v2.9.18$MG_EXT
-    MGSOURCE=https://cms-project-generators.web.cern.ch/cms-project-generators/$MG
-    
+    MG=MG5_aMC_v3.5.6$MG_EXT
+    MGSOURCE=https://launchpad.net/mg5amcnlo/3.0/3.5.x/+download/$MG
+
     MGBASEDIRORIG=$(echo ${MG%$MG_EXT} | tr "." "_")
     isscratchspace=0
     
@@ -208,6 +208,25 @@ make_gridpack () {
     
       LHAPDFINCLUDES=`$LHAPDFCONFIG --incdir`
       LHAPDFLIBS=`$LHAPDFCONFIG --libdir`
+
+      # workaround for el8
+      LHAPDFPYTHONVER=`find $LHAPDFLIBS -name "python*" -type d -exec basename {} \;`
+      LHAPDFPYTHONLIB=`find $LHAPDFLIBS/$LHAPDFPYTHONVER/site-packages -name "*.egg" -type d -exec basename {} \;`
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$LHAPDFLIBS
+
+      if [ ! -z "${LHAPDFPYTHONLIB}" ] ; then
+        if [ ! -z "${PYTHONPATH+x}" ] ; then
+          export PYTHONPATH=$PYTHONPATH:$LHAPDFLIBS/$LHAPDFPYTHONVER/site-packages/$LHAPDFPYTHONLIB
+        else
+          export PYTHONPATH=$LHAPDFLIBS/$LHAPDFPYTHONVER/site-packages/$LHAPDFPYTHONLIB
+        fi
+      else
+        if [ ! -z "${PYTHONPATH+x}" ] ; then
+          export PYTHONPATH=$PYTHONPATH:$LHAPDFLIBS/$LHAPDFPYTHONVER/site-packages
+        else
+          export PYTHONPATH=$LHAPDFLIBS/$LHAPDFPYTHONVER/site-packages
+        fi
+      fi
     
       echo "set auto_update 0" > mgconfigscript
       echo "set automatic_html_opening False" >> mgconfigscript
